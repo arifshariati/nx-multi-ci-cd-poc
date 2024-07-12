@@ -31,12 +31,18 @@ In this repo we shall deploy NestJS backend application to `Heroku` where as the
 # Add NextJS plugin
 npx nx add @nx/next
 
-# Add NextJS application 
+# Add NextJS application
 npx nx generate @nx/next:application --name=frontend --directory=apps/frontend --projectNameAndRootFormat=as-provided --no-interactive
 
-# Run NextJs application 
+# Run NextJs application
 npx nx run frontend:dev
 
 # Add NestJS plugin
 npx nx add @nx/nest
+
+# Add NestJs application
+npx nx generate @nx/nest:application --name=backend --directory=apps/backend --projectNameAndRootFormat=as-provided --no-interactive
+
+# Run NestJs application
+npx nx run backend:serve 
 ```
