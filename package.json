@@ -2,7 +2,10 @@
   "name": "@nx-multi-ci-cd-poc/source",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "frontend:dev": "npx nx run frontend:dev",
+    "backend:dev": "npx nx run backend:serve"
+  },
   "private": true,
   "devDependencies": {
     "@nestjs/schematics": "^10.0.1",
