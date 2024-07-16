@@ -2,8 +2,9 @@ name: CI/CD
 
 on:
   push:
-    branches: [main]
+    branches: [development]
   pull_request:
+    branches: [main, development]
   workflow_dispatch:
 
 concurrency:
@@ -36,6 +37,8 @@ jobs:
           fetch-depth: 0
       - name: Setup Node.JS
         uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.PRIMARY_NODE_VERSION }}
       - name: Install dependencies
         run: npm ci
       - uses: nrwl/nx-set-shas@v4
@@ -45,6 +48,9 @@ jobs:
         run: npx nx affected -t test
       - name: Build
         run: npx nx affected -t build
+      - name: Check if backend is affected
+        run: echo 'Backend affected $(npx nx affected:apps --base=origin/development --head=$GITHUB_SHA)'
+        id: affected-backend
 
   PR:
     runs-on: ubuntu-latest
@@ -61,7 +67,9 @@ jobs:
       - uses: nrwl/nx-set-shas@v4
 
       - name: Setup NodeJS
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.PRIMARY_NODE_VERSION }}
       - name: Install dependencies
         run: npm ci
       - name: Commit lint
