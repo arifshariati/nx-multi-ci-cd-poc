@@ -108,7 +108,7 @@ jobs:
         uses: ./.github/actions/setup-dependencies
       - name: Nx affected
         if: env.is-merge == 'true'
-        run: npx nx affected -t build --base=origin/main --head=$GITHUB_SHA
+        run: npx nx affected -t build
         id: affected
       - name: Log affected apps
         run: echo "Affected apps ${{ steps.affected.outputs.apps }}"
