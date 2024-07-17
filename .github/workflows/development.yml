@@ -8,7 +8,7 @@ on:
 
 concurrency:
   group: '${{ github.workflow }} - ${{ github.head_ref || github.ref }}'
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/development' }}
 
 env:
   PRIMARY_NODE_VERSION: 20
@@ -24,7 +24,7 @@ permissions:
   contents: read
 
 jobs:
-  main:
+  development:
     runs-on: ubuntu-latest
 
     if: ${{ github.event_name != 'pull_request' }}
