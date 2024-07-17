@@ -20,13 +20,13 @@ defaults:
   run:
     shell: bash
 
-# Needed for nx-set-shas when run on the main branch
+# Needed for nx-set-shas when run on the development branch
 permissions:
   actions: read
   contents: read
 
 jobs:
-  main:
+  development:
     runs-on: ubuntu-latest
     if: ${{ github.event_name != 'pull_request'}}
 
@@ -50,7 +50,7 @@ jobs:
       - name: Build
         run: npx nx affected -t build
       - name: Nx affected
-        run: npx nx affected -t apps --base=origin/development --head=$GITHUB_SHA
+        run: npx nx affected -t apps --base=origin/main --head=$GITHUB_SHA
         id: affected
       - name: Check if backend is affected
         if: contains(steps.affected.outputs.apps, 'backend')
