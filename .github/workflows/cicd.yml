@@ -49,9 +49,15 @@ jobs:
         run: npx nx affected -t test
       - name: Build
         run: npx nx affected -t build
+      - name: Nx affected
+        run: npx nx affected -t apps --base=origin/development --head=$GITHUB_SHA
+        id: affected
       - name: Check if backend is affected
-        run: echo 'Backend affected $(npx nx affected:apps --base=origin/development --head=$GITHUB_SHA)'
-        id: affected-backend
+        if: contains(steps.affected.outputs.apps, 'backend')
+        run: echo 'Backend is affected, deploying to Heroku'
+      - name: Check if frontend is affected
+        if: contains(steps.affected.outputs.apps, 'frontend')
+        run: echo 'Frontend is effected, deploying to Vercel'
 
   PR:
     runs-on: ubuntu-latest
