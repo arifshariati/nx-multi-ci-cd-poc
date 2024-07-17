@@ -6,6 +6,11 @@ on:
       - development
   pull_request:
 
+env:
+  PRIMARY_NODE_VERSION: 20
+  # This increases the verbosity of the logs for everything, including Nx Cloud, but will hopefully surface more info about recent lint failures
+  NX_VERBOSE_LOGGING: true
+
 # Needed for nx-set-shas when run on the main branch
 permissions:
   actions: read
@@ -19,9 +24,9 @@ jobs:
         with:
           fetch-depth: 0
       - uses: actions/setup-node@v3
-        with:
-          node-version: 20
-          cache: 'npm'
+        # with:
+        #   node-version: 20
+        #   cache: 'npm'
       # This line enables distribution
       # The "--stop-agents-after" is optional, but allows idle agents to shut down once the "e2e-ci" targets have been requested
       # - run: npx nx-cloud start-ci-run --distribute-on="5 linux-medium-js" --stop-agents-after="e2e-ci"
