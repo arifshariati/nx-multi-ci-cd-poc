@@ -4,7 +4,16 @@
   "license": "MIT",
   "scripts": {
     "frontend:dev": "npx nx run frontend:dev",
-    "backend:dev": "npx nx run backend:serve"
+    "backend:dev": "npx nx run backend:serve",
+    "affected:build": "npx nx affected -t build --configuration=production",
+    "affected:ci": "npm run affected:build && npm run affected:lint && npm run affected:test --configuration=ci-production",
+    "affected:lint": "npx nx affected -t lint --max-warnings=0",
+    "affected:test": "npx nx affected -t test",
+    "build": "npx nx run-many -t build --configuration=production",
+    "ci": "npm run build && npm run lint && npm run test --configuration=ci-production",
+    "lint": "npx nx run-many --t lint --all --max-warnings=0",
+    "lint-fix": "npx nx run-many --t lint --all --fix",
+    "test": "npx nx run-many --t test --all"
   },
   "private": true,
   "devDependencies": {

@@ -7,13 +7,21 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: '${{ github.workflow }} - ${{ github.head_ref || github.ref }}'
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+  # Group concurrency on workflow, then:
+  # - Is merge run? Group on branch name (refs/heads/main)
+  # - Is pull request? Group on pull request branch name, for example feat/add-awesome-feature
+  group: ${{ github.workflow }} - ${{ github.event_name == 'push' && github.head_ref || github.ref }}
+  # Run merge workflows in sequence to prevent parallel deployments and releases
+  # Cancel stale pull request runs in progress for the same branch
+  cancel-in-progress: ${{ github.event_name != 'push' }}
 
 env:
   PRIMARY_NODE_VERSION: 20
   # This increases the verbosity of the logs for everything, including Nx Cloud, but might surface more info about recent lint failures
   NX_VERBOSE_LOGGING: true
+  # Branching
+  is-merge: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
+  is-pull-request: ${{ github.event_name == 'pull_request' }}
 
 defaults:
   run:
@@ -25,64 +33,86 @@ permissions:
   contents: read
 
 jobs:
-  main:
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
-    if: ${{ github.event_name != 'pull_request'}}
-
     steps:
-      - name: Checkout [${{github.ref_name}}]
-        uses: actions/checkout@v4
+      - name: Checkout the source code
+        uses: actions/checkout@v3
         with:
+          # Required by nrwl/nx-set-shas
           fetch-depth: 0
-      - name: Setup Node.JS
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ env.PRIMARY_NODE_VERSION }}
-          cache: 'npm'
-      - name: Install dependencies
-        run: npm ci
-      - uses: nrwl/nx-set-shas@v4
-      - name: Lint
+      - name: 'Derive approperiate SHAs for base and head for `nx affected` commands'
+        uses: nrwl/nx-set-shas@v4
+      - name: Setup dependencies
+        uses: ./.github/actions/setup-dependencies
+      - name: Lint Nx workspace
+        run: npm run lint
+      - name: 'PR: Lint workspace and affected proejcts'
+        if: env.is-pull-request == 'true'
         run: npx nx affected -t lint
-      - name: Test
-        run: npx nx affected -t test
-      - name: Build
-        run: npx nx affected -t build
+      - name: 'Merge: Lint workspace and all projects'
+        if: env.is-merge == 'true'
+        run: npm run lint
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v3
+        with:
+          # Required by nrwl/nx-set-shas
+          fetch-depth: 0
+      - name: 'Derive approperiate SHAs for base and head for `nx affected` commands'
+        uses: nrwl/nx-set-shas@v4
+      - name: Set up dependencies
+        uses: ./.github/actions/setup-dependencies
+      - name: 'PR: Test affected projects'
+        if: env.is-pull-request == 'true'
+        run: npm run affected:test
+      - name: 'Merge: Test all projects'
+        if: env.is-merge == 'true'
+        run: npm run test
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v3
+        with:
+          # Required by nrwl/nx-set-shas
+          fetch-depth: 0
+      - name: 'Derive approperiate SHAs for base and head for `nx affected` commands'
+        uses: nrwl/nx-set-shas@v4
+      - name: Setup dependencies
+        uses: ./.github/actions/setup-dependencies
+      - name: 'PR: Build application if affected by changes in feature branch'
+        if: env.is-pull-request == 'true'
+        run: npm run affected:build
+      - name: 'Merge: Build application'
+        if: env.is-merge == 'true'
+        run: npm run build
+
+  affected:
+    name: Affected
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v3
+        with:
+          # Required by nrwl/nx-set-shas
+          fetch-depth: 0
+      - name: 'Derive approperiate SHAs for base and head for `nx affected` commands'
+        uses: nrwl/nx-set-shas@v4
+      - name: Setup dependencies
+        uses: ./.github/actions/setup-dependencies
       - name: Nx affected
+        if: env.is-merge == 'true'
         run: npx nx affected -t apps --base=origin/main --head=$GITHUB_SHA
         id: affected
-      - name: Check if backend is affected
+      - name: 'Check if `backend`app is affected'
         if: contains(steps.affected.outputs.apps, 'backend')
         run: echo 'Backend is affected, deploying to Heroku'
-      - name: Check if frontend is affected
+      - name: 'Check if `frontend`app is affected'
         if: contains(steps.affected.outputs.apps, 'frontend')
         run: echo 'Frontend is effected, deploying to Vercel'
-
-  PR:
-    runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'pull_request'}}
-
-    steps:
-      - name: Checkout [${{github.ref_name}}]
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.ref }}
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          fetch-depth: 0
-      - name: Setup NodeJS
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ env.PRIMARY_NODE_VERSION }}
-      - name: Install dependencies
-        run: npm ci
-
-      - uses: nrwl/nx-set-shas@v4
-
-      - name: Commit lint
-        run: npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
-      - name: Lint
-        run: npx nx affected -t lint
-      - name: Test
-        run: npx nx affected -t test
-      - name: Build
-        run: npx nx affected -t build
