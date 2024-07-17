@@ -3,6 +3,9 @@
 This repo presents the basic configuration of Nx monorepo containing several apps. In production, we need a mechanism of deploying various applications to various cloud providers.
 In this repo we shall deploy NestJS backend application to `Heroku` where as the NextJS frontend application to `Vercel`.
 
+> [!Note]
+> You are most welcome to help me fix CICD part. Clone the repo and raise PR for your changes agains main branch.
+
 > ## How it should work?
 >
 > We start working on a feature in Nx workspaces containing several apps and libraries. Let's present two use cases in production.
