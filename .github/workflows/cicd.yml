@@ -47,7 +47,7 @@ jobs:
       - name: Setup dependencies
         uses: ./.github/actions/setup-dependencies
       - name: Lint Nx workspace
-        run: npx nx workspace-lint
+        run: npm run lint
       - name: 'PR: Lint workspace and affected proejcts'
         if: env.is-pull-request == 'true'
         run: npx nx affected -t lint
