@@ -2,9 +2,8 @@ name: CI/CD
 
 on:
   push:
-    branches: [development]
+    branches: [main]
   pull_request:
-    branches: [main, development]
   workflow_dispatch:
 
 concurrency:
@@ -39,6 +38,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: ${{ env.PRIMARY_NODE_VERSION }}
+          cache: 'npm'
       - name: Install dependencies
         run: npm ci
       - uses: nrwl/nx-set-shas@v4
@@ -48,30 +48,36 @@ jobs:
         run: npx nx affected -t test
       - name: Build
         run: npx nx affected -t build
+      - name: Nx affected
+        run: npx nx affected -t apps --base=origin/main --head=$GITHUB_SHA
+        id: affected
       - name: Check if backend is affected
-        run: echo 'Backend affected $(npx nx affected:apps --base=origin/development --head=$GITHUB_SHA)'
-        id: affected-backend
+        if: contains(steps.affected.outputs.apps, 'backend')
+        run: echo 'Backend is affected, deploying to Heroku'
+      - name: Check if frontend is affected
+        if: contains(steps.affected.outputs.apps, 'frontend')
+        run: echo 'Frontend is effected, deploying to Vercel'
 
   PR:
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'pull_request'}}
 
     steps:
-      - name: Checkout repository
+      - name: Checkout [${{github.ref_name}}]
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           fetch-depth: 0
-
-      - uses: nrwl/nx-set-shas@v4
-
       - name: Setup NodeJS
         uses: actions/setup-node@v3
         with:
           node-version: ${{ env.PRIMARY_NODE_VERSION }}
       - name: Install dependencies
         run: npm ci
+
+      - uses: nrwl/nx-set-shas@v4
+
       - name: Commit lint
         run: npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
       - name: Lint

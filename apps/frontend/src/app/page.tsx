@@ -13,7 +13,7 @@ export default function Index() {
           <div id="welcome">
             <h1>
               <span> Hello there, </span>
-              Welcome frontend 👋
+              Welcome frontend 👋 🚀 🔥
             </h1>
           </div>
 
