@@ -14,6 +14,7 @@ export default function Index() {
             <h1>
               <span> Hello there, </span>
               Welcome frontend 👋 🚀 🔥 🤖
+
             </h1>
           </div>
 
