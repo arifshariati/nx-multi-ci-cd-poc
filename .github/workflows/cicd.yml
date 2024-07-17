@@ -110,6 +110,8 @@ jobs:
         if: env.is-merge == 'true'
         run: npx nx affected -t build --base=origin/main --head=$GITHUB_SHA
         id: affected
+      - name: Log affected apps
+        run: echo "Affected apps ${{ steps.affected.outputs.apps }}"
       - name: 'Check if `backend`app is affected'
         if: contains(steps.affected.outputs.apps, 'backend')
         run: echo 'Backend is affected, deploying to Heroku'
